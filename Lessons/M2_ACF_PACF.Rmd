@@ -44,10 +44,11 @@ For this first example we will import water inflow data for reservoirs in Brazil
 
 #Option 2: import using shortcut "." or ".." or relative path
 # the "." will point to the folder set as current directory
-# the ".." will point to your parent folder set as current directory
+# the ".." will point to your parent folder set as current directory - move to a parent folder. use two dots when using Document Directry 
 
 #check which folder is your current directory using function getwd()
 getwd()
+
 # my output was "/Users/lmm89/OneDrive/Duke_University/9_Spring2022/ENV790_TSA/Git_Repo/ENV790_TimeSeriesAnalysis_Sp2022_v2" meaning current directory is my project folder, therefore I only need to use "."
 # if output was "/Users/lmm89/OneDrive/Duke_University/9_Spring2022/ENV790_TSA/Git_Repo/ENV790_TimeSeriesAnalysis_Sp2022_v2/Lessons" then I would need to use ".."
 
@@ -73,7 +74,7 @@ The data sets we will work with will be index by time, remember we are doing TIM
 ```{r}
 #using package lubridate
 my_date <- paste(raw_inflow_data[,1],raw_inflow_data[,2],sep="-")
-my_date <- my(my_date)  #function my from package lubridate
+my_date <- my(my_date)  #function my from package lubridate. if months come first use my. if year comes first, use ym. 
 head(my_date)
 #add that to inflow_data 
 inflow_data <- cbind(my_date,raw_inflow_data[,3:5])
@@ -91,7 +92,7 @@ A plot of observed values over time is the first you do to start understanding t
 
 ```{r}
 #Graph 1: Plot the series for HP1
-plot(inflow_data[,"HP1"]) # note that this do not generate a nice plot
+plot(inflow_data[,"HP1"]) # note that this do not generate a nice plot. default is a scatterplot 
 
 plot(inflow_data[,"HP1"],type="l") #The type "l" tells you want a line plot check help(plot) 
                                   #for other types of plots
@@ -121,7 +122,7 @@ There are other useful plots available for data visualization like histograms an
 ```{r}
 #Graph 3: Simple Histogram
 hist(inflow_data[,"HP1"])
-hist(inflow_data[,"HP1"],breaks=30,col="gray")  #increase number of bars with breaks input
+hist(inflow_data[,"HP1"],breaks=30,col="gray")  #increase number of bars with breaks input. -> log normal distribution is left skewed. 
 
 #Graph 4: Scatter Plot of HP1 and HP2
 plot(inflow_data[,"HP1"],inflow_data[,"HP2"])
@@ -141,9 +142,18 @@ ggplot(inflow_data, aes(x=my_date, y=HP1)) +
 ggplot(inflow_data, aes(x=my_date, y=Inflow)) +
             geom_line(aes(y=HP1,col="HP1")) +
             geom_line(aes(y=HP2,col="HP2")) +
+            geom_line(aes(y=HP3,col="HP3")) +
             xlab("Time") +
             labs(color="Reservoir")
 ```
+```{r}
+ggplot(inflow_data, aes(x=my_date, y=Inflow)) +
+            geom_line(aes(y=HP1,col="HP1")) +
+            geom_line(aes(y=HP2,col="HP2")) +
+            xlab("Time") +
+            labs(color="Reservoir")
+```
+
 ## Transforming data into time series object
 
 Many of the functions we will use require a time series object. You can transform your data in a time series using the function *ts()*. Only the columns with reservoir inflow data should be transformed, not the ones with month and year. Your ts object is not a data frame, but like I said we will need it as a ts for some function we will explore in future scripts.
@@ -155,4 +165,23 @@ ts_inflow_data
 ```
 
 Note that ts_inflow_data has information on start, end and frequency. We will discuss frequency in future lectures, for now let's just keep the default value for frequency which is 1.
+
+#ACF and PACF
+
+```{r}
+acf(ts_inflow_data[,1]) 
+pacf(ts_inflow_data[,1])
+#blue dot line is significance level. inside the line it is not significant. 
+
+#you can change the number of lags
+acf(ts_inflow_data[,1],lag.max=50) 
+pacf(ts_inflow_data[,1],lag.max=50) 
+
+#capital Acf. Acf doesn't show the correlation at zero it's always 1. 
+library(forecast)
+Acf(ts_inflow_data[,1],lag.max=50)
+Pacf(ts_inflow_data[,1],lag.max=50)
+
+```
+
 
