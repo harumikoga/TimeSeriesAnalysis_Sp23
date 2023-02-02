@@ -1,7 +1,7 @@
 ---
 title: "ENV 790.30 - Time Series Analysis for Energy Data | Spring 2023"
 subtitle: "Assignment 2 - Due date 02/03/23"
-author: "Student Name"
+author: "Haru Koga"
 output: pdf_document
 geometry: margin=2.54cm
 ---
@@ -23,16 +23,30 @@ R packages needed for this assignment:"forecast","tseries", and "dplyr". Install
 ```{r}
 #Load/install required package here
 
+library(tseries)
+library(forecast)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(Kendall)
+library(tidyverse)
+
 ```
 
+```{r}
+knitr::opts_chunk$set(echo = TRUE) 
+```
 
 ## Data set information  
 
 Consider the data provided in the spreadsheet "Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source.xlsx" on our **Data** folder. The data comes from the US Energy Information and Administration and corresponds to the December 2022 Monthly Energy Review. The spreadsheet is ready to be used. You will also find a $.csv$ version of the data "Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source-Edit.csv". You may use the function $read.table()$ to import the $.csv$ data in R. Or refer to the file "M2_ImportingData_CSV_XLSX.Rmd" in our Lessons folder for functions that are better suited for importing the $.xlsx$.
 
 ```{r}
-#Importing data set
+#Import data set
+getwd()
 
+RE_data_raw <- read.csv(file="/Users/harumikoga/TimeSeriesAnalysis_Sp23/Data/Table_10.1_Renewable_Energy_Production_and_Consumption_by_Source-Edit.csv",header=FALSE, skip=1)
+RE_data_raw
 ```
 
 
@@ -40,15 +54,31 @@ Consider the data provided in the spreadsheet "Table_10.1_Renewable_Energy_Produ
 You will work only with the following columns: Total Biomass Energy Production, Total Renewable Energy Production, Hydroelectric Power Consumption. Create a data frame structure with these three time series only. Use the command head() to verify your data.
 
 ```{r}
+RE_data <- RE_data_raw[c(1,4,5,6)]
 
+colnames(RE_data)=c("Month","Biomass", "Renewable", "Hydroelectric")
+head(RE_data)
 ```
 
+```{r}
+plot(RE_data)
+#plot(RE_data[,"Biomass"],RE_data[,"Renewable"])
+
+#ggplot(RE_data, aes(x=Month, y=Biomass)) +
+            geom_line(aes(y=Biomass,col="Biomass")) +
+            geom_line(aes(y=Renewable,col="Renewable")) +
+            xlab("Time") +
+            labs(color="Production")
+```
 
 ## Question 2
 Transform your data frame in a time series object and specify the starting point and frequency of the time series using the function ts().
 
 ```{r}
+ts_RE_data <- ts(RE_data[,2:4])
+ts_RE_data
 
+#plot(ts_RE_data[,1])
 ```
 
 
@@ -56,7 +86,15 @@ Transform your data frame in a time series object and specify the starting point
 Compute mean and standard deviation for these three series.
 
 ```{r}
+mean(ts_RE_data[,"Biomass"])
+mean(ts_RE_data[,"Renewable"])
+mean(ts_RE_data[,"Hydroelectric"])
+mean(ts_RE_data)
 
+sd(ts_RE_data[,"Biomass"])
+sd(ts_RE_data[,"Renewable"])
+sd(ts_RE_data[,"Hydroelectric"])
+sd(ts_RE_data)
 ```
 
 
@@ -64,6 +102,7 @@ Compute mean and standard deviation for these three series.
 Display and interpret the time series plot for each of these variables. Try to make your plot as informative as possible by writing titles, labels, etc. For each plot add a horizontal line at the mean of each series in a different color.
 
 ```{r}
+autoplot(ts_RE_data)
 
 ```
 
