@@ -60,22 +60,12 @@ colnames(RE_data)=c("Month","Biomass", "Renewable", "Hydroelectric")
 head(RE_data)
 ```
 
-```{r}
-plot(RE_data)
-#plot(RE_data[,"Biomass"],RE_data[,"Renewable"])
-
-#ggplot(RE_data, aes(x=Month, y=Biomass)) +
-            geom_line(aes(y=Biomass,col="Biomass")) +
-            geom_line(aes(y=Renewable,col="Renewable")) +
-            xlab("Time") +
-            labs(color="Production")
-```
 
 ## Question 2
 Transform your data frame in a time series object and specify the starting point and frequency of the time series using the function ts().
 
 ```{r}
-ts_RE_data <- ts(RE_data[,2:4])
+ts_RE_data <- ts(RE_data[,2:4],frequency=12,start=c(1973,1))
 ts_RE_data
 
 #plot(ts_RE_data[,1])
@@ -89,12 +79,12 @@ Compute mean and standard deviation for these three series.
 mean(ts_RE_data[,"Biomass"])
 mean(ts_RE_data[,"Renewable"])
 mean(ts_RE_data[,"Hydroelectric"])
-mean(ts_RE_data)
+
 
 sd(ts_RE_data[,"Biomass"])
 sd(ts_RE_data[,"Renewable"])
 sd(ts_RE_data[,"Hydroelectric"])
-sd(ts_RE_data)
+
 ```
 
 
@@ -103,13 +93,23 @@ Display and interpret the time series plot for each of these variables. Try to m
 
 ```{r}
 
+plot(ts_RE_data[,1],type="l",col="green",ylab="Biomass Production (Trillion Btu)",main="Total Biomass Energy Production") +
+  abline(h=mean(ts_RE_data[,1]),col="red")
+ 
+plot(ts_RE_data[,2],type="l",col="blue",ylab="Renewable Production (Trillion Btu)",main="Total Renewable Energy Production") +
+  abline(h=mean(ts_RE_data[,2]),col="red")
 
-autoplot(ts_RE_data[,"Biomass"]) +
-  xlab("Time") +
-  ylab("Biomass Production") +
-  labs(color="Energy Source")
+plot(ts_RE_data[,3],type="l",col="yellow",ylab="Hydroelectric Consumption (Trillion Btu)",main="Hydroelectric Power Consumption") +
+  abline(h=mean(ts_RE_data[,3]),col="red")
+```
+For biomass production time series plot, there is an increasing trend starting around mid 2000s. Between 1990 and 2000, the biomass production is very fluctuating. 
 
-abline(mean(ts_RE_data[,"Biomass"])
+For renewable production time series plot, I can clearly observe an increasing trend. Especially since 2010, the increase rate has grown and the renewable production has almost doubled in 2020 base to 2010. 
+
+For hydroelectric time series plot, hydroelectric consumption seems declining over the last two decades. There is a strong variability within each year. 
+
+```{r}
+autoplot(ts_RE_data)
 ```
 
 
@@ -117,35 +117,39 @@ abline(mean(ts_RE_data[,"Biomass"])
 Compute the correlation between these three series. Are they significantly correlated? Explain your answer.
 
 ```{r}
-cor(ts_RE_data[,1],ts_RE_data[,2],ts_RE_data[,3])
+#cor(ts_RE_data[,1],ts_RE_data[,2],ts_RE_data[,3])
 
 cor(ts_RE_data)
 ```
+Biomass and renewable productions are significantly correlated. It makes sense because biomass is also a part of renewable energy. As biomass production increases, renewable production also increases. 
+Biomass production and hydroelectric consumption are negatively correlated to some extent. They are not that significant, but the negative relationship might be because that the increased supply from biomass could drive reduce the hydro consumption in some regions. Renewable production and hydro consumption are not significantly correlated. 
 
 
 ## Question 6
 Compute the autocorrelation function from lag 1 up to lag 40 for these three variables. What can you say about these plots? Do the three of them have the same behavior?
 
 ```{r}
-RE_acf=acf(ts_RE_data,lag.max=40, type="correlation", plot=TRUE)
 
-Biomass_acf=acf(ts_RE_data[,1],lag.max=40, plot=TRUE)
+Biomass_acf=acf(ts_RE_data[,1],lag.max=40, plot=TRUE, main="Biomass",ylim=c(-0.5,1))
 
-Renewables_acf=acf(ts_RE_data[,2],lag.max=40, plot=TRUE)
+Renewables_acf=acf(ts_RE_data[,2],lag.max=40, plot=TRUE, main="Renewables",ylim=c(-0.5,1))
 
-Hydroelectric_acf=acf(ts_RE_data[,3],lag.max=40, plot=TRUE)
+Hydroelectric_acf=acf(ts_RE_data[,3],lag.max=40, plot=TRUE,main="Hydro consumption",ylim=c(-0.5,1))
 ```
+Biomass and renewable production plots have a similar behavior.It seems there is a declining trend over time. They both do not have seasonality patterns. Unlike these, the hydro consumption plot shows seasonality of the correlation.
 
 
 ## Question 7
 Compute the partial autocorrelation function from lag 1 to lag 40 for these three variables. How these plots differ from the ones in Q6?
 
 ```{r}
-Biomass_pacf=pacf(ts_RE_data[,1],lag.max=40, plot=TRUE)
+Biomass_pacf=pacf(ts_RE_data[,1],lag.max=40, plot=TRUE,main="Biomass",ylim=c(-0.5,1))
 
-Renewables_pacf=pacf(ts_RE_data[,2],lag.max=40, plot=TRUE)
+Renewables_pacf=pacf(ts_RE_data[,2],lag.max=40, plot=TRUE,main="Biomass",ylim=c(-0.5,1))
 
-Hydroelectric_pacf=pacf(ts_RE_data[,3],lag.max=40, plot=TRUE)
+Hydroelectric_pacf=pacf(ts_RE_data[,3],lag.max=40, plot=TRUE,main="Biomass",ylim=c(-0.5,1))
+
 ```
+The magnitude of the correlations of all the three plots are smaller than that from Q6. PACF is always smaller than ACF. The height in the y-axis is not as high as the ones from acf, meaning that the correlation between yt and yt-1 themselves are not that strong. 
 
 
