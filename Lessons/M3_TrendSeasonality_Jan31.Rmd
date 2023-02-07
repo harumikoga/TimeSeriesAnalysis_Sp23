@@ -1,6 +1,6 @@
 ---
 title: "M3: Class Exercise on Trend and Season - after class Jan 31"
-author: "Luana Lima"
+author: "Haru Koga"
 output: pdf_document
 ---
 
@@ -87,14 +87,13 @@ The initial plots showed that we have zeros in the end of the data set. It could
 #check the final obs on data 
 tail(inflow_data)
 
-
 ```
 
 Note our last observation is from August 2011 but the data file was filled with zeros. Let's remove the last four rows of our data set.
 
 ```{r}
 #Remove last year by replacing current data frame
-inflow_data <- inflow_data[1:(nobs-412,]
+inflow_data <- inflow_data[1:(nobs-12),]
 
 #update object with number of observations
 nobs <- nobs-12
@@ -109,6 +108,10 @@ Fixed!
 Many of the functions we will use require a time series object. You can transform your data in a time series using the function *ts()*. 
 
 ```{r}
+ts_inflow_data <- ts(inflow_data[,2:(2+nhydro-1)],frequency=12,start=c(1931,1)) #year,month,date
+#monthly data's frequency is 12
+
+ts_inflow_data 
 
 ```
 
@@ -119,7 +122,19 @@ Let's use functions Acf() and Pacf() from package "forecast".
 
 ```{r acf}
 
+for(i in 1:nhydro){
+  par(mfrow=c(1:2))
+  Acf(ts_inflow_data[,i],lag.max=40,main=paste("HP",i),ylim=c(-1,1))
+  Pacf(ts_inflow_data[,i],lag.max=40,ylim=c(-1,1))
+}
 
+#non stationarity 
+#seasonality of the correlation 
+#look at y-axix to see the magnetude of correlation 
+
+#answer seasonality and magnitude of correlation just looking at y-axix
+#HP4 declining - non-stationary
+#HP8 weak autocorrelation 
 
 ```
 
@@ -131,18 +146,33 @@ Let's identify and remove trend component like we leaned on the recorded videos 
 ```{r}
 #Create vector t
 
-
+t <- 1:nobs
+iHP=4 #name of the index
 
 #Fit a linear trend to TS of iHP
+linear_trend <- lm(inflow_data[,iHP+1] ~ t)
+summary(linear_trend)
+# you can just say 5 to replace iHP+1
 
+ggplot(inflow_data,aes(x=my_date, y=inflow_data[,iHP+1]))+
+  geom_line(color="blue")+
+  geom_smooth(method = "lm",color="red")
 
 ```
-
+t 2.1836 = beta 1, the intercept is beta 0. 
 
 ```{r}
+beta0 <- linear_trend$coefficients[1] #intercept 
+beta1 <- linear_trend$coefficients[2] #beta 1 is not the mean but level of the series. 
+
 #remove the trend from series
+# you can use either TS object or dataframe.
 
+detrend_inflow_data <- inflow_data[,(iHP+1)]- (beta0+beta1*t)
 
+ggplot(inflow_data,aes(x=my_date,y=inflow_data[,iHP+1]))+
+  geom_line(color="blue")+
+  geom_line(aes(y=detrend_inflow_data),color="green")
 
 ```
 Note that blue line is our original series, red lien is our trend, green line is our original series minus the trend or in other words the detrended series. And in orange is the trend line for the detrended series which has slope 0 meaning we were able to effectively eliminate the trend with a linear model.
@@ -153,8 +183,36 @@ Now let's shift attention to the seasonal component.
 
 ```{r}
 #Use seasonal means model
+#by creating seasonal dummies and running a regression over the dummies 
 
+iHP=1
 
+dummies <- seasonaldummy(ts_inflow_data[,iHP]) # leave December out for intercept on regression 
+
+seas_means_model <- lm(inflow_data[,(iHP+1)]~dummies)
+summary(seas_means_model)
+#negative month - bs it's relative to December. Intercept value is the mean for December. your x value is just showing seasonal components. 
+#if you want the Jan mean, intercept + the coefficient on dummiesJan. 
+
+beta0 <- seas_means_model$coefficients[1]
+beta1 <- seas_means_model$coefficients[2:12]
+
+inflow_seas_comp <- array(0,nobs)
+for(i in 1:nobs){
+  inflow_seas_comp[i] = beta0 + beta1 %*% dummies[i,]
+} 
+#effect of seasonal components are added
+
+ggplot(inflow_data,aes(x=my_date,y=inflow_data[,iHP+1]))+ 
+  geom_line(color="blue")+
+  geom_line(aes(y=inflow_seas_comp),color="orange")
+  
+  
+#use differencing at lag equal to period of dataset. to model a seasonal component. 
+#when you have a short period of years, using this model is not a concern. bc the January mean of 1940 and 2000 are the same in this model.
+#variation on seasonality and trend are different things. 
+
+#go with TS object and model seasonal component
 ```
 
 ##Exercise
@@ -169,6 +227,9 @@ Some test only work for non-seasonal data. So let's create another series with y
 ```{r}
 #Group data in yearly steps instances
 
+#stochastic trend - not constant over time() - only adf test can be used 
+adf's null hypothesis is data has unit root and alternative is stationary 
+
 
 ```
 
@@ -180,7 +241,8 @@ Check for deterministic trend.
 
 #Since I have seasonal data I cannot use the simple MannKendall()
 #another example of functions that need a ts object
-
+SMKtest <- SeasonalMannKendall(ts_inflow_data[,iHP])
+print(summary(SMKtest))
 
 #Use yearly date to run Mann Kendall
 
@@ -205,6 +267,7 @@ Used to detect stochastic trend.
 
 ```{r}
 #Null hypothesis is that data has a unit root
+it can still have a determistic trend. you dont need to differenciate 
 print("Results for ADF test/n")
 
 #Now let's try the yearly data
